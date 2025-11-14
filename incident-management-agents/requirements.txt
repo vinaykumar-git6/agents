@@ -1,0 +1,26 @@
+# Microsoft Agent Framework (--pre flag required while in preview)
+agent-framework-azure-ai>=1.0.0b251016
+
+# Azure SDK packages (always use managed identity)
+azure-identity>=1.19.0
+azure-cosmos>=4.8.0
+azure-communication-email>=1.1.0
+azure-search-documents>=11.6.0
+azure-monitor-opentelemetry>=1.8.0
+azure-functions>=1.21.3
+
+# HTTP and API handling
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+httpx>=0.28.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+
+# Environment and configuration
+python-dotenv>=1.0.1
+
+# Logging and monitoring
+opencensus-ext-azure>=1.1.13
+
+# Date/time handling
+python-dateutil>=2.9.0
