@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Diagram Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .header {
+            text-align: left;
+            color: white;
+            margin-bottom: 30px;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-icon {
+            font-size: 3.5em;
+            background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .header-content h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .header-content p {
+            font-size: 1em;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+        
+        /* Main content layout */
+        .main-content {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            color: #667eea;
+            margin-bottom: 20px;
+            pointer-events: none;
+        }
+        
+        .upload-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 10px;
+            pointer-events: none;
+        }
+        
+        .upload-subtext {
+            color: #666;
+            pointer-events: none;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+            display: none;
+        }
+        
+        .analyze-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+        }
+        
+        .results-header {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .card-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .card-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+        
+        .detail-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .items-list {
+            list-style: none;
+        }
+        
+        .items-list li {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .confidence {
+            float: right;
+            color: #764ba2;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            display: none;
+            background: #ff4444;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .terraform-section {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            border: 2px solid #667eea;
+        }
+        
+        .terraform-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .terraform-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .terraform-tab {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .terraform-tab:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .terraform-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .terraform-code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.2s;
+        }
+        
+        .download-btn:hover {
+            transform: scale(1.05);
+            background: #218838;
+        }
+        
+        /* Infracost Section Styles */
+        .infracost-section {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            border: 2px solid #667eea;
+            color: #fff;
+        }
+        
+        .infracost-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .infracost-title {
+            color: #fff;
+            font-size: 1.3em;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .cost-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .cost-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .cost-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .cost-card-title {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .cost-card-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+        
+        .cost-card-value.total {
+            color: #4caf50;
+        }
+        
+        .cost-breakdown {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .cost-breakdown-title {
+            font-size: 0.95em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .resource-cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+            transition: all 0.2s ease;
+        }
+        
+        .resource-cost-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        
+        .resource-name {
+            font-size: 0.9em;
+            color: #e8e8e8;
+        }
+        
+        .resource-cost {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #4fc3f7;
+        }
+        
+        .infracost-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(102, 126, 234, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #888;
+        }
+        
+        .infracost-note {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-icon">🏗️</div>
+            <div class="header-content">
+                <h1>Architecture Diagram Analyzer</h1>
+                <p>✨ Upload your architecture diagram and get instant insights & Terraform IAC code powered by Azure AI</p>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Click to upload or drag & drop</div>
+                <div class="upload-subtext">Supports PNG, JPG, JPEG, GIF, BMP (Max 16MB)</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+            <img id="previewImage" class="preview-image">
+            <center>
+                <button class="analyze-btn" id="analyzeBtn">🔍 Analyze Diagram</button>
+            </center>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loadingMessage">Analyzing your architecture diagram...</p>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <div class="main-content">
+            <div class="results-section" id="resultsSection">
+                <h2 class="results-header">📊 Analysis Results</h2>
+            
+            <!-- Azure Services Section (Agent Analysis) -->
+            <div class="detail-section" id="azureServicesSection" style="display: none;">
+                <h3 class="section-title">☁️ Azure Architecture Recommendations</h3>
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="font-size: 1.1em; margin-bottom: 10px;">
+                        <strong>Cloud Provider:</strong> <span id="cloudProvider"></span>
+                    </div>
+                    <div style="font-size: 0.95em; line-height: 1.6;" id="architectureSummary"></div>
+                </div>
+                
+                <div id="azureServicesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                </div>
+            </div>
+            
+            <div class="summary-cards" id="summaryCards"></div>
+            
+            <!-- Terraform Section -->
+            <div class="terraform-section" id="terraformSection" style="display: none;">
+                <div class="terraform-header">
+                    <h3 class="section-title" style="margin: 0; border: none;">📝 Generated Terraform IAC Project</h3>
+                    <button class="download-btn" id="downloadBtn" onclick="downloadTerraform()">
+                        📥 Download Project (ZIP)
+                    </button>
+                </div>
+                
+                <div class="terraform-tabs" id="terraformTabs">
+                    <button class="terraform-tab active" onclick="showTerraformFile('providers.tf')">providers.tf</button>
+                    <button class="terraform-tab" onclick="showTerraformFile('main.tf')">main.tf</button>
+                    <button class="terraform-tab" onclick="showTerraformFile('variables.tf')">variables.tf</button>
+                    <button class="terraform-tab" onclick="showTerraformFile('outputs.tf')">outputs.tf</button>
+                    <button class="terraform-tab" onclick="showTerraformFile('terraform.tfvars')">terraform.tfvars</button>
+                    <button class="terraform-tab" onclick="showTerraformFile('README.md')">README.md</button>
+                </div>
+                
+                <div class="terraform-code" id="terraformCode">
+                    <!-- Terraform code will be displayed here -->
+                </div>
+            </div>
+            <!-- Infracost Section -->
+            <div class="infracost-section" id="infracostSection" style="display: none;">
+                <div class="infracost-header">
+                    <h3 class="infracost-title">💰 Infrastructure Cost Estimate</h3>
+                    <span id="infracostCurrency" style="color: #4fc3f7; font-size: 0.9em;">USD</span>
+                </div>
+                
+                <div class="cost-summary">
+                    <div class="cost-card">
+                        <div class="cost-card-title">Monthly Cost</div>
+                        <div class="cost-card-value total" id="infracostMonthly">$0.00</div>
+                    </div>
+                    <div class="cost-card">
+                        <div class="cost-card-title">Hourly Cost</div>
+                        <div class="cost-card-value" id="infracostHourly">$0.00</div>
+                    </div>
+                    <div class="cost-card">
+                        <div class="cost-card-title">Resources</div>
+                        <div class="cost-card-value" id="infracostResourceCount">0</div>
+                    </div>
+                </div>
+                
+                <div class="cost-breakdown">
+                    <div class="cost-breakdown-title">📊 Cost Breakdown by Resource</div>
+                    <div id="infracostBreakdown">
+                        <!-- Resource cost items will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="infracost-footer">
+                    <div class="infracost-note">
+                        ⚡ Powered by Infracost
+                    </div>
+                    <div id="infracostTimestamp" style="font-size: 0.85em;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const previewImage = document.getElementById('previewImage');
+        const terraformSection = document.getElementById('terraformSection');
+        
+        // Debug logging
+        console.log('Upload area element:', uploadArea);
+        console.log('File input element:', fileInput);
+        
+        if (!uploadArea) {
+            console.error('Upload area not found!');
+        }
+        if (!fileInput) {
+            console.error('File input not found!');
+        }
+        
+        let selectedFile = null;
+        let terraformFiles = {};
+        
+        // Update workflow stage status (defined early to avoid hoisting issues)
+        function updateWorkflowStage(stage, status) {
+            const stageEl = document.getElementById(`stage${stage}`);
+            if (!stageEl) return;
+            
+            stageEl.classList.remove('active', 'completed', 'failed');
+            if (status === 'active') {
+                stageEl.classList.add('active');
+            } else if (status === 'completed') {
+                stageEl.classList.add('completed');
+            } else if (status === 'failed') {
+                stageEl.classList.add('failed');
+            }
+        }
+        
+        // Click to upload
+        console.log('Adding click event listener to upload area...');
+        uploadArea.addEventListener('click', () => {
+            console.log('Upload area clicked!');
+            fileInput.click();
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            console.log('File input changed:', e.target.files);
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function handleFile(file) {
+            console.log('Handling file:', file.name);
+            selectedFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Show analyze button
+            analyzeBtn.style.display = 'inline-block';
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+        }
+        
+        // Analyze button
+        let iacJobId = null; // Track IAC generation job
+        let pollInterval = null; // Polling interval reference
+        let analyzerStartTime = null;
+        let iacStartTime = null;
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            // Show loading
+            analyzeBtn.disabled = true;
+            loading.style.display = 'block';
+            loadingMessage.textContent = 'Starting AI workflow analysis...';
+            errorMessage.style.display = 'none';
+            resultsSection.style.display = 'none';
+            terraformSection.style.display = 'none';
+            document.getElementById('infracostSection').style.display = 'none';
+            
+            try {
+                // Execute complete workflow (all stages)
+                analyzerStartTime = Date.now();
+                iacStartTime = Date.now();
+                
+                loadingMessage.textContent = 'Running Vision → Analyzer → Best Practices → IAC → Cost Estimation...';
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                console.log('=== WORKFLOW RESPONSE DEBUG ===');
+                console.log('Full response:', data);
+                console.log('vision_result:', data.vision_result);
+                console.log('analyzer_result:', data.analyzer_result);
+                console.log('best_practices_result:', data.best_practices_result);
+                console.log('terraform:', data.terraform);
+                console.log('infracost:', data.infracost);
+                console.log('===============================');
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Store job ID for session
+                if (data.job_id) {
+                    sessionStorage.setItem('currentJobId', data.job_id);
+                }
+                
+                const totalTime = ((Date.now() - analyzerStartTime) / 1000).toFixed(2);
+                console.log(`Workflow completed in ${totalTime}s`);
+                
+                // Display analyzer results
+                if (data.analyzer_result) {
+                    displayAnalyzerResults(data.analyzer_result, data.best_practices_result, data);
+                } else {
+                    console.error('No analyzer_result in response:', data);
+                }
+                
+                // Display Terraform if available
+                if (data.terraform && data.terraform.files) {
+                    displayTerraformResults(data);
+                } else {
+                    console.error('No terraform files in response:', data);
+                }
+                
+                // Display Infracost if available
+                if (data.infracost) {
+                    displayInfracostResults(data.infracost);
+                }
+                
+                loading.style.display = 'none';
+                analyzeBtn.disabled = false;
+                
+            } catch (error) {
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.style.display = 'block';
+                loading.style.display = 'none';
+                analyzeBtn.disabled = false;
+                console.error('Workflow error:', error);
+            }
+        });
+        
+        function displayAnalyzerResults(analyzerData, bestPracticesData, fullData) {
+            console.log('displayAnalyzerResults called');
+            console.log('analyzerData:', analyzerData);
+            console.log('bestPracticesData:', bestPracticesData);
+            
+            // Show Azure services section
+            const azureServicesSection = document.getElementById('azureServicesSection');
+            azureServicesSection.style.display = 'block';
+            
+            // Cloud provider
+            document.getElementById('cloudProvider').textContent = analyzerData.cloud_provider || 'Unknown';
+            
+            // Summary
+            document.getElementById('architectureSummary').innerHTML = 
+                (analyzerData.summary || 'No summary available').replace(/\n/g, '<br>');
+            
+            // Azure services list - compact cards
+            const azureServicesList = document.getElementById('azureServicesList');
+            if (analyzerData.azure_services && analyzerData.azure_services.length > 0) {
+                azureServicesList.innerHTML = analyzerData.azure_services.map(service => `
+                    <div style="background: #ffffff; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.2)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'; this.style.transform=''">
+                        <div style="font-weight: 600; color: #667eea; font-size: 1em; margin-bottom: 6px;">
+                            ${service.service_name}
+                        </div>
+                        <div style="color: #666; font-size: 0.85em; line-height: 1.4; margin-bottom: 8px;">
+                            ${service.description || 'No description available'}
+                        </div>
+                        <div style="display: flex; gap: 12px; font-size: 0.75em; color: #888;">
+                            <span style="background: #f0f0f0; padding: 3px 8px; border-radius: 4px;">📦 ${service.category || 'General'}</span>
+                            <span style="background: #f0f0f0; padding: 3px 8px; border-radius: 4px;">📍 ${service.region || 'N/A'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                azureServicesList.innerHTML = '<p style="color: #666; padding: 20px; text-align: center;">No Azure services identified in this diagram.</p>';
+            }
+            
+            // Summary cards - HORIZONTAL compact layout
+            const summaryCards = document.getElementById('summaryCards');
+            const totalRecommendations = bestPracticesData?.total_recommendations || 0;
+            const totalServices = bestPracticesData?.service_recommendations?.length || 0;
+            
+            summaryCards.innerHTML = `
+                <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: 3px;">Services</div>
+                            <div style="font-size: 1.8em; font-weight: bold;">${analyzerData.total_services || 0}</div>
+                        </div>
+                        <div style="font-size: 2em; opacity: 0.3;">🔍</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #4fc3f7 0%, #667eea 100%); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(79, 195, 247, 0.3); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: 3px;">Cloud Provider</div>
+                            <div style="font-size: 1.2em; font-weight: bold;">${analyzerData.cloud_provider || 'Unknown'}</div>
+                        </div>
+                        <div style="font-size: 2em; opacity: 0.3;">☁️</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: 3px;">Region</div>
+                            <div style="font-size: 1.2em; font-weight: bold;">${analyzerData.default_region || 'N/A'}</div>
+                        </div>
+                        <div style="font-size: 2em; opacity: 0.3;">📍</div>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%); color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(255, 167, 38, 0.3); display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: 3px;">Best Practices</div>
+                            <div style="font-size: 1.8em; font-weight: bold;">${totalRecommendations}</div>
+                        </div>
+                        <div style="font-size: 2em; opacity: 0.3;">✨</div>
+                    </div>
+                </div>
+                
+                <div style="margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #f8f9ff 0%, #e8eaf6 100%); border-radius: 12px; border: 2px solid #667eea; text-align: center;">
+                    <div style="font-size: 1.1em; font-weight: 600; color: #667eea; margin-bottom: 8px;">📚 Comprehensive Best Practices Available</div>
+                    <p style="color: #666; margin-bottom: 12px; font-size: 0.9em;">
+                        ${totalRecommendations} recommendations across ${totalServices} services
+                    </p>
+                    <a href="/best-practices" style="text-decoration: none; display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 25px; border-radius: 20px; font-weight: 600; font-size: 0.95em; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.5)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'">
+                        View Full Report →
+                    </a>
+                </div>
+            `;
+            
+            // Show results
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayTerraformResults(data) {
+            console.log('=== TERRAFORM DISPLAY DEBUG ===');
+            console.log('data.terraform:', data.terraform);
+            console.log('data.terraform.files:', data.terraform?.files);
+            console.log('===============================');
+            
+            if (data.terraform && data.terraform.files && Object.keys(data.terraform.files).length > 0) {
+                terraformFiles = data.terraform.files;
+                console.log('Terraform files loaded:', Object.keys(terraformFiles));
+                terraformSection.style.display = 'block';
+                
+                // Dynamically create tabs based on actual files
+                const terraformTabs = document.getElementById('terraformTabs');
+                const fileKeys = Object.keys(terraformFiles);
+                console.log('Available Terraform files:', fileKeys);
+                
+                if (fileKeys.length > 0) {
+                    // Clear and rebuild tabs
+                    terraformTabs.innerHTML = '';
+                    
+                    // Preferred order for tabs
+                    const preferredOrder = ['providers.tf', 'main.tf', 'variables.tf', 'outputs.tf', 'terraform.tfvars', 'README.md'];
+                    
+                    // Sort files: preferred order first, then alphabetically
+                    const sortedFiles = fileKeys.sort((a, b) => {
+                        const aIndex = preferredOrder.indexOf(a);
+                        const bIndex = preferredOrder.indexOf(b);
+                        
+                        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                        if (aIndex !== -1) return -1;
+                        if (bIndex !== -1) return 1;
+                        return a.localeCompare(b);
+                    });
+                    
+                    // Create tabs dynamically
+                    sortedFiles.forEach((filename, index) => {
+                        const button = document.createElement('button');
+                        button.className = 'terraform-tab' + (index === 0 ? ' active' : '');
+                        button.textContent = filename;
+                        button.onclick = () => showTerraformFile(filename);
+                        terraformTabs.appendChild(button);
+                    });
+                    
+                    // Show first file
+                    const firstFile = sortedFiles[0];
+                    console.log('Showing first file:', firstFile);
+                    showTerraformFile(firstFile);
+                } else {
+                    console.error('No Terraform files available to display');
+                    document.getElementById('terraformCode').textContent = '// No Terraform files generated\n// Please check the workflow logs for errors';
+                }
+                
+                // Scroll to terraform section
+                terraformSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                console.error('Terraform data missing or empty:', data.terraform);
+            }
+        }
+        
+        function showTerraformFile(filename) {
+            console.log('Showing Terraform file:', filename);
+            console.log('Available files:', Object.keys(terraformFiles));
+            
+            // Update active tab
+            const tabs = document.querySelectorAll('.terraform-tab');
+            tabs.forEach(tab => {
+                if (tab.textContent === filename) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Display file content
+            const code = terraformFiles[filename];
+            console.log('File content length:', code ? code.length : 0);
+            console.log('File content preview:', code ? code.substring(0, 200) : 'EMPTY');
+            
+            const codeElement = document.getElementById('terraformCode');
+            if (code && code.trim().length > 0) {
+                codeElement.textContent = code;
+            } else {
+                codeElement.textContent = '// File content not available or empty\n// This might indicate an issue with Terraform code generation';
+            }
+        }
+        
+        async function downloadTerraform() {
+            try {
+                const response = await fetch('/download-terraform');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to download Terraform project');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'terraform_project.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log(`Downloaded terraform_project.zip (${(blob.size / 1024).toFixed(2)} KB)`);
+            } catch (error) {
+                alert(`Error downloading: ${error.message}`);
+                console.error('Download failed:', error);
+            }
+        }
+        
+        // ===== Infracost Display Function =====
+        
+        function displayInfracostResults(infracostData) {
+            console.log('=== INFRACOST DISPLAY DEBUG ===');
+            console.log('infracostData:', infracostData);
+            console.log('===============================');
+            
+            if (!infracostData) {
+                console.log('No infracost data to display');
+                return;
+            }
+            
+            const infracostSection = document.getElementById('infracostSection');
+            infracostSection.style.display = 'block';
+            
+            // Parse cost values
+            let monthlyCost = '$0.00';
+            let hourlyCost = '$0.00';
+            let resourceCount = 0;
+            let resources = [];
+            
+            try {
+                // Handle the API response structure: { cost_estimate: { summary: {...}, resources: [...] }, cost_report: "..." }
+                const costEstimate = infracostData.cost_estimate || infracostData;
+                const summary = costEstimate.summary || {};
+                
+                // Parse monthly cost - may be "$745.96" or "745.96"
+                let monthlyStr = summary.total_monthly_cost || costEstimate.total_monthly_cost || '0';
+                monthlyStr = String(monthlyStr).replace(/[$,]/g, '');
+                const monthly = parseFloat(monthlyStr) || 0;
+                monthlyCost = '$' + monthly.toFixed(2);
+                
+                // Parse hourly cost
+                let hourlyStr = summary.total_hourly_cost || costEstimate.total_hourly_cost || '0';
+                hourlyStr = String(hourlyStr).replace(/[$,]/g, '');
+                const hourly = parseFloat(hourlyStr) || (monthly / 730);
+                hourlyCost = '$' + hourly.toFixed(4);
+                
+                // Get resources
+                resources = costEstimate.resources || [];
+                resourceCount = costEstimate.resource_count || resources.length;
+                
+                console.log('Parsed values:', { monthly, hourly, resourceCount, resourcesLength: resources.length });
+                
+            } catch (e) {
+                console.error('Error parsing infracost data:', e);
+            }
+            
+            // Update summary cards
+            document.getElementById('infracostMonthly').textContent = monthlyCost;
+            document.getElementById('infracostHourly').textContent = hourlyCost;
+            document.getElementById('infracostResourceCount').textContent = resourceCount;
+            
+            // Display resource breakdown
+            const breakdownDiv = document.getElementById('infracostBreakdown');
+            
+            if (resources.length > 0) {
+                breakdownDiv.innerHTML = resources.map(resource => {
+                    const name = resource.name || resource.resource_type || 'Unknown Resource';
+                    // monthly_cost may be string "0" or "$745.96"
+                    let costVal = resource.monthly_cost || resource.monthlyCost || '0';
+                    costVal = String(costVal).replace(/[$,]/g, '');
+                    const costNum = parseFloat(costVal) || 0;
+                    const costStr = '$' + costNum.toFixed(2);
+                    
+                    return `
+                        <div class="resource-cost-item">
+                            <span class="resource-name">${name}</span>
+                            <span class="resource-cost">${costStr}/mo</span>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                breakdownDiv.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #888;">
+                        <p>📊 Detailed resource breakdown not available</p>
+                        <p style="font-size: 0.85em; margin-top: 8px;">Run 'infracost breakdown' locally for detailed analysis</p>
+                    </div>
+                `;
+            }
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('infracostTimestamp').textContent = 
+                `Estimated at ${now.toLocaleTimeString()}`;
+            
+            // Scroll to infracost section
+            infracostSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Restore session on page load
+        async function restoreSession() {
+            try {
+                const response = await fetch('/api/restore-session');
+                const data = await response.json();
+                
+                if (data.has_session && data.analyzer_result) {
+                    // Restore the analysis results
+                    displayAnalyzerResults(data.analyzer_result, data.best_practices_result, data);
+                    
+                    // Restore Terraform display if available
+                    if (data.terraform) {
+                        displayTerraformResults(data);
+                    }
+                    
+                    // Restore Infracost display if available
+                    if (data.infracost) {
+                        displayInfracostResults(data.infracost);
+                    }
+                    
+                    console.log('Session restored - previous analysis loaded');
+                }
+            } catch (error) {
+                console.log('No previous session to restore');
+            }
+        }
+        
+        // Call restore on page load
+        window.addEventListener('DOMContentLoaded', restoreSession);
+    </script>
+</body>
+</html>
